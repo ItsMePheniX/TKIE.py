@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TKIE — Key Information Extractor</title>
+  <meta name="description" content="Upload a document image and extract structured JSON data using LLM-TKIE — an AI-powered key information extraction pipeline." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ── Navbar ── -->
+  <nav class="navbar" role="banner">
+    <div class="nav-brand">
+      <span class="nav-logo">TKIE</span>
+      <span class="nav-sub">Key Information Extractor</span>
+    </div>
+    <div class="nav-actions">
+      <a id="bad-samples-badge" class="badge badge--danger" href="#bad-samples-section" title="View quarantined documents">
+        ☠ Bad Samples: <span id="bad-count">–</span>
+      </a>
+      <div class="status-dot" id="status-dot" title="API status"></div>
+    </div>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <header class="hero">
+    <div class="hero-glow"></div>
+    <h1 class="hero-title">Extract. Structure. <span class="gradient-text">Understand.</span></h1>
+    <p class="hero-desc">
+      Upload any document image — invoice, receipt, purchase order — and the LLM-TKIE
+      pipeline will return clean, structured JSON in seconds.
+    </p>
+  </header>
+
+  <!-- ── Main layout ── -->
+  <main class="layout">
+
+    <!-- Upload card -->
+    <section class="card upload-card" aria-label="Document upload">
+      <div class="card-header">
+        <span class="card-icon">⬆</span>
+        <h2 class="card-title">Upload Document</h2>
+        <span class="spinner hidden" id="spinner" aria-label="Processing"></span>
+      </div>
+
+      <!-- Drop zone -->
+      <div
+        id="drop-zone"
+        class="drop-zone"
+        role="button"
+        tabindex="0"
+        aria-label="Drop zone — click or drag a document image here"
+      >
+        <div class="drop-icon">☁</div>
+        <p class="drop-label">Drop your document here or <span class="link">click to browse</span></p>
+        <p class="drop-hint">Supports JPEG · PNG · TIFF · WebP · BMP</p>
+        <input
+          type="file"
+          id="file-input"
+          accept="image/jpeg,image/png,image/tiff,image/webp,image/bmp"
+          aria-hidden="true"
+        />
+      </div>
+
+      <!-- Preview -->
+      <div id="preview-wrap" class="preview-wrap hidden">
+        <img id="preview-img" class="preview-img" alt="Document preview" />
+        <div class="preview-meta">
+          <span id="preview-name" class="preview-name"></span>
+          <button id="clear-btn" class="btn btn--ghost btn--sm" aria-label="Remove file">✕ Remove</button>
+        </div>
+      </div>
+
+      <!-- Action -->
+      <button id="extract-btn" class="btn btn--primary" disabled>
+        <span class="btn-text">Extract Information</span>
+        <span class="btn-arrow">→</span>
+      </button>
+
+      <!-- Error banner -->
+      <div id="error-banner" class="alert alert--error hidden" role="alert"></div>
+    </section>
+
+    <!-- Results card -->
+    <section class="card results-card" aria-label="Extraction results">
+      <div class="card-header">
+        <span class="card-icon">{ }</span>
+        <h2 class="card-title">Extracted Data</h2>
+        <div class="result-actions">
+          <button id="copy-btn" class="btn btn--ghost btn--sm hidden" aria-label="Copy JSON to clipboard">⎘ Copy</button>
+          <button id="download-btn" class="btn btn--ghost btn--sm hidden" aria-label="Download JSON file">↓ Download</button>
+        </div>
+      </div>
+
+      <div id="results-placeholder" class="results-placeholder">
+        <div class="placeholder-icon">◎</div>
+        <p>Results will appear here once you upload and extract a document.</p>
+      </div>
+
+      <pre id="json-output" class="json-output hidden" role="region" aria-label="Extracted JSON" tabindex="0"></pre>
+
+      <!-- Field summary pills -->
+      <div id="field-pills" class="field-pills hidden"></div>
+    </section>
+  </main>
+
+  <!-- ── Bad Samples Section ── -->
+  <section id="bad-samples-section" class="bad-samples-section">
+    <div class="section-header">
+      <h2 class="section-title danger-text">☠ Quarantined Documents</h2>
+      <button id="refresh-bad-btn" class="btn btn--ghost btn--sm">↻ Refresh</button>
+    </div>
+    <div id="bad-samples-list" class="bad-samples-list">
+      <p class="muted">No bad samples yet.</p>
+    </div>
+  </section>
+
+  <!-- ── Pipeline Steps ── -->
+  <section class="pipeline-section">
+    <h2 class="section-title">How It Works</h2>
+    <ol class="pipeline-steps">
+      <li class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Preprocess</strong>
+          <span>Strip alpha, normalise, resize to 1920px max side</span>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>DBNet++ Detection</strong>
+          <span>Detect text bounding boxes · confidence ≥ 0.9</span>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>SVTR_LCNet Recognition</strong>
+          <span>CTC decode each box · drop scores &lt; 0.9</span>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Completeness Check <em>(Prompt 1)</em></strong>
+          <span>LLM verifies company · date · total are present — rotates up to 270° if not</span>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <strong>Few-Shot Extraction <em>(Prompt 2)</em></strong>
+          <span>LLM extracts all fields using 3 annotated examples</span>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <strong>Validation + Refinement <em>(Prompt 3)</em></strong>
+          <span>Regex validates JSON schema — if invalid, LLM reformats once more</span>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <footer class="footer">
+    <p>LLM-TKIE · PaddleOCR DBNet++ + SVTR_LCNet · Ollama LLaMA3-8B / Qwen2-7B · FastAPI</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
