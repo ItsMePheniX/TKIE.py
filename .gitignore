@@ -1,0 +1,56 @@
+# ── Environment ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── uv / virtualenv ──────────────────────────────────────────
+.venv/
+venv/
+env/
+uv.lock
+
+# ── PaddleOCR model cache ────────────────────────────────────
+~/.paddleocr/
+inference/
+*.pdmodel
+*.pdiparams
+*.pdopt
+
+# ── Bad samples (runtime output) ─────────────────────────────
+backend/bad_samples/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDEs ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Pytest / coverage ────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Temp / uploads ───────────────────────────────────────────
+tmp/
+temp/
+*.tmp
