@@ -1,0 +1,56 @@
+[
+  {
+    "input": "ACME SUPPLIES LTD\nInvoice No: INV-2024-001\nDate: 15 Jan 2024\nBill To: Globex Corp\nDescription         Qty   Unit Price   Amount\nOffice Chair         2     150.00       300.00\nDesk Lamp            5      25.00       125.00\nSubtotal: 425.00\nTax (10%): 42.50\nTotal: 467.50\nCurrency: USD\nPayment Terms: Net 30",
+    "output": {
+      "company_name": "ACME SUPPLIES LTD",
+      "document_date": "2024-01-15",
+      "document_number": "INV-2024-001",
+      "vendor_name": "Globex Corp",
+      "line_items": [
+        {"description": "Office Chair", "quantity": 2, "unit_price": 150.00, "amount": 300.00},
+        {"description": "Desk Lamp",    "quantity": 5, "unit_price":  25.00, "amount": 125.00}
+      ],
+      "subtotal": 425.00,
+      "tax": 42.50,
+      "total": 467.50,
+      "currency": "USD",
+      "payment_terms": "Net 30"
+    }
+  },
+  {
+    "input": "RIVERSTONE BAKERIES\nPurchase Order # PO-789\nOrder Date: 03/22/2024\nSupplier: Golden Grain Co.\nItem              Units   Price Each   Total\nWheat Flour 5kg    10       12.00       120.00\nSugar 2kg          20        5.50       110.00\nSubtotal           230.00\nVAT 8%              18.40\nOrder Total        248.40\nCurrency: EUR\nTerms: Immediate",
+    "output": {
+      "company_name": "RIVERSTONE BAKERIES",
+      "document_date": "2024-03-22",
+      "document_number": "PO-789",
+      "vendor_name": "Golden Grain Co.",
+      "line_items": [
+        {"description": "Wheat Flour 5kg", "quantity": 10, "unit_price": 12.00, "amount": 120.00},
+        {"description": "Sugar 2kg",       "quantity": 20, "unit_price":  5.50, "amount": 110.00}
+      ],
+      "subtotal": 230.00,
+      "tax": 18.40,
+      "total": 248.40,
+      "currency": "EUR",
+      "payment_terms": "Immediate"
+    }
+  },
+  {
+    "input": "TECHVISION PVT LTD\nInvoice: TV-2024-055  Date: July 8 2024\nClient: Sunrise Retail\nQty  Description           Rate      Subtotal\n3    Laptop Stand           45.00     135.00\n1    USB-C Hub             89.00      89.00\n     Sub-Total:            224.00\n     Tax (GST 18%):         40.32\n     Grand Total:          264.32\n     Currency: INR\n     Payment: 45 Days Net",
+    "output": {
+      "company_name": "TECHVISION PVT LTD",
+      "document_date": "2024-07-08",
+      "document_number": "TV-2024-055",
+      "vendor_name": "Sunrise Retail",
+      "line_items": [
+        {"description": "Laptop Stand", "quantity": 3, "unit_price": 45.00, "amount": 135.00},
+        {"description": "USB-C Hub",    "quantity": 1, "unit_price": 89.00, "amount":  89.00}
+      ],
+      "subtotal": 224.00,
+      "tax": 40.32,
+      "total": 264.32,
+      "currency": "INR",
+      "payment_terms": "45 Days Net"
+    }
+  }
+]
