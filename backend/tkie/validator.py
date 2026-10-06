@@ -13,8 +13,11 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import re
 from typing import Any
+
+from tkie.config import JSON_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -72,9 +75,10 @@ def _extract_outermost_json(text: str) -> str | None:
 class JSONValidator:
     """Validates and parses LLM output against the target JSON template."""
 
-    def __init__(self, template: dict[str, Any]) -> None:
+    def __init__(self, template: dict[str, Any], schema: dict[str, Any] | None = None) -> None:
         self.template = template
         self._required_keys: set[str] = set(template.keys())
+        self.schema = schema or JSON_SCHEMA
 
     # ------------------------------------------------------------------
     # Public API
@@ -114,13 +118,17 @@ class JSONValidator:
         return block
 
     def validate_against_template(self, parsed: dict) -> bool:
-        """Check that all top-level template keys are present in *parsed*.
+        """Require an exact, recursively type-checked output schema."""
+        actual_keys = set(parsed)
+        missing = self._required_keys - actual_keys
+        extra = actual_keys - self._required_keys
+        if missing or extra:
+            logger.warning("JSON schema key mismatch; missing=%s, extra=%s", missing, extra)
+            return False
 
-        Missing keys cause a validation failure; extra keys are tolerated.
-        """
-        missing = self._required_keys - set(parsed.keys())
-        if missing:
-            logger.warning("JSON missing required keys: %s", missing)
+        error = self._validate_value(parsed, self.schema, path="$")
+        if error:
+            logger.warning("JSON schema validation failed: %s", error)
             return False
         return True
 
@@ -139,3 +147,50 @@ class JSONValidator:
         except json.JSONDecodeError as exc:
             logger.warning("JSON parse error: %s", exc)
             return None
+
+    def _validate_value(self, value: Any, schema: dict[str, Any], path: str) -> str | None:
+        expected = schema.get("type")
+        expected_types = expected if isinstance(expected, list) else [expected]
+        if not any(self._matches_type(value, kind) for kind in expected_types):
+            return f"{path} must be {expected_types}, got {type(value).__name__}"
+
+        if isinstance(value, dict):
+            properties = schema.get("properties", {})
+            required = set(schema.get("required", properties))
+            keys = set(value)
+            missing = required - keys
+            extra = keys - set(properties)
+            if missing:
+                return f"{path} missing keys: {sorted(missing)}"
+            if extra and not schema.get("additionalProperties", True):
+                return f"{path} has unexpected keys: {sorted(extra)}"
+            for key, child_schema in properties.items():
+                if key in value:
+                    error = self._validate_value(value[key], child_schema, f"{path}.{key}")
+                    if error:
+                        return error
+
+        if isinstance(value, list):
+            item_schema = schema.get("items")
+            if item_schema:
+                for index, item in enumerate(value):
+                    error = self._validate_value(item, item_schema, f"{path}[{index}]")
+                    if error:
+                        return error
+        return None
+
+    @staticmethod
+    def _matches_type(value: Any, expected: str | None) -> bool:
+        # bool is an int subclass in Python but must not qualify as a number.
+        return {
+            "object": lambda: isinstance(value, dict),
+            "array": lambda: isinstance(value, list),
+            "string": lambda: isinstance(value, str),
+            "number": lambda: (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(value)
+            ),
+            "boolean": lambda: isinstance(value, bool),
+            "null": lambda: value is None,
+        }.get(expected, lambda: False)()

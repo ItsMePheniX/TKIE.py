@@ -3,7 +3,7 @@ tkie/ocr.py
 OCR pipeline using PaddleOCR (DBNet++ detection + SVTR_LCNet recognition).
 
 Pipeline:
-  1. DBNet++ detects text bounding boxes → filter by DET_CONFIDENCE_THRESHOLD
+  1. DBNet++ detects text bounding boxes using PaddleOCR's configured box threshold
   2. SVTR_LCNet recognizes text in each box → CTC decode → filter by REC_CONFIDENCE_THRESHOLD
   3. Aggregate surviving text top-to-bottom, left-to-right → unified text block
 """
@@ -11,11 +11,12 @@ Pipeline:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
-from tkie.config import DET_CONFIDENCE_THRESHOLD, OCR_LANGUAGE, REC_CONFIDENCE_THRESHOLD
+from tkie.config import DET_BOX_THRESHOLD, OCR_LANGUAGE, REC_CONFIDENCE_THRESHOLD
+from tkie.exceptions import OCRError
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,12 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class BBox:
-    """A detected text bounding box (4 corner points) with confidence score."""
+    """A detected text bounding box.
+
+    PaddleOCR's combined OCR API does not return a detector confidence for an
+    individual box, so this object intentionally carries geometry only.
+    """
     points: list[list[float]]   # [[x0,y0], [x1,y1], [x2,y2], [x3,y3]]
-    score: float
 
     @property
     def top_left_y(self) -> float:
@@ -54,11 +58,11 @@ class TextResult:
 # ---------------------------------------------------------------------------
 
 class OCRPipeline:
-    """Wraps PaddleOCR to enforce confidence thresholds at both OCR stages.
+    """Wraps PaddleOCR with explicit detection and recognition contracts.
 
-    PaddleOCR's .ocr() already chains detection + recognition internally,
-    but it exposes per-result scores that we inspect manually so we can
-    apply *separate* thresholds to detection and recognition.
+    DBNet's box threshold is passed to PaddleOCR at initialisation. The
+    combined OCR result only exposes recognition confidence, which is the only
+    per-fragment score filtered after inference.
     """
 
     def __init__(self) -> None:
@@ -80,6 +84,7 @@ class OCRPipeline:
             lang=OCR_LANGUAGE,
             det_model_dir=None,    # use PaddleOCR's auto-download for DBNet++
             rec_model_dir=None,    # use PaddleOCR's auto-download for SVTR_LCNet
+            det_db_box_thresh=DET_BOX_THRESHOLD,
             det_db_score_mode="slow",   # polygon mode — more accurate for DBNet++
             show_log=False,
         )
@@ -108,21 +113,6 @@ class OCRPipeline:
         )
         return unified
 
-    def detect(self, img_array: np.ndarray) -> list[BBox]:
-        """Run *only* the detection stage and return confidence-filtered boxes.
-
-        Useful for debugging or visualisation purposes.
-        """
-        raw_results = self._run_ocr(img_array)
-        boxes = []
-        for line in (raw_results or []):
-            if line is None:
-                continue
-            points, (_, det_score) = line
-            if det_score >= DET_CONFIDENCE_THRESHOLD:
-                boxes.append(BBox(points=points, score=det_score))
-        return boxes
-
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
@@ -131,7 +121,10 @@ class OCRPipeline:
         """Invoke PaddleOCR and return the raw result list."""
         # PaddleOCR returns: [ [[box_points], [text, score]], ... ]
         # For a numpy array input it returns a list of lists (one per page).
-        result = self._ocr.ocr(img_array, cls=False)
+        try:
+            result = self._ocr.ocr(img_array, cls=False)
+        except Exception as exc:
+            raise OCRError("PaddleOCR could not process the image.") from exc
         # Flatten the page dimension (we always pass single images)
         if result and isinstance(result[0], list) and result[0] and isinstance(result[0][0], list):
             # Nested list: result = [ [ line, line, ... ] ]
@@ -144,12 +137,9 @@ class OCRPipeline:
         PaddleOCR line format: [box_points, (text_str, rec_score)]
         where box_points = [[x0,y0], [x1,y1], [x2,y2], [x3,y3]]
 
-        Detection confidence is embedded as the score attached to each box
-        in the det-only output, but in the combined ocr() output the box
-        itself is what PaddleOCR deemed above its internal det threshold.
-        We apply our own DET_CONFIDENCE_THRESHOLD by checking the rec_score
-        proxy returned per line, and our REC_CONFIDENCE_THRESHOLD on the
-        recognition score.
+        PaddleOCR has already applied its configured detector box threshold.
+        Its combined OCR output exposes only ``rec_score``, so that is the
+        only score filtered here.
         """
         results: list[TextResult] = []
         if not raw_results:
@@ -177,7 +167,7 @@ class OCRPipeline:
                 )
                 continue
 
-            bbox = BBox(points=points, score=rec_score)
+            bbox = BBox(points=points)
             results.append(TextResult(text=text_str, score=rec_score, bbox=bbox))
 
         return results

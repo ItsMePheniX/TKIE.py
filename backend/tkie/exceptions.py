@@ -18,3 +18,7 @@ class CompletenessCheckError(TKIEError):
 
 class OCRError(TKIEError):
     """Raised when the OCR pipeline encounters an unrecoverable error."""
+
+
+class LLMError(TKIEError):
+    """Raised when the local LLM service cannot complete a request."""

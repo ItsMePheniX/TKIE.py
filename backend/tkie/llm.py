@@ -25,7 +25,9 @@ from tkie.config import (
     OLLAMA_MODEL,
     OLLAMA_NUM_CTX,
     OLLAMA_TEMPERATURE,
+    OLLAMA_TIMEOUT_SECONDS,
 )
+from tkie.exceptions import LLMError
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,7 @@ class OllamaLLMClient:
         self,
         model: str = OLLAMA_MODEL,
         base_url: str = OLLAMA_BASE_URL,
+        timeout: float = OLLAMA_TIMEOUT_SECONDS,
     ) -> None:
         try:
             import ollama  # type: ignore[import]
@@ -48,8 +51,13 @@ class OllamaLLMClient:
         self._ollama = ollama
         self.model = model
         self.base_url = base_url
-        self._client = ollama.Client(host=base_url)
-        logger.info("OllamaLLMClient initialised (model=%s, host=%s)", model, base_url)
+        self._client = ollama.Client(host=base_url, timeout=timeout)
+        logger.info(
+            "OllamaLLMClient initialised (model=%s, host=%s, timeout=%ss)",
+            model,
+            base_url,
+            timeout,
+        )
 
     # ------------------------------------------------------------------
     # Public prompt methods
@@ -194,18 +202,40 @@ class OllamaLLMClient:
         logger.debug("Refinement raw response length: %d chars", len(raw))
         return raw
 
+    def is_available(self) -> bool:
+        """Return whether Ollama is reachable and the configured model is present."""
+        try:
+            response = self._client.list()
+            models = response.get("models", []) if isinstance(response, dict) else response.models
+            model_names = {
+                item.get("model") if isinstance(item, dict) else getattr(item, "model", None)
+                for item in models
+            }
+            return self.model in model_names
+        except Exception as exc:
+            logger.warning("Ollama readiness check failed: %s", exc)
+            return False
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
 
     def _chat(self, messages: list[dict]) -> str:
         """Send a messages list to Ollama and return the response text."""
-        response = self._client.chat(
-            model=self.model,
-            messages=messages,
-            options={
-                "temperature": OLLAMA_TEMPERATURE,
-                "num_ctx": OLLAMA_NUM_CTX,
-            },
-        )
-        return response["message"]["content"]
+        try:
+            response = self._client.chat(
+                model=self.model,
+                messages=messages,
+                options={
+                    "temperature": OLLAMA_TEMPERATURE,
+                    "num_ctx": OLLAMA_NUM_CTX,
+                },
+            )
+            return response["message"]["content"]
+        except (KeyError, TypeError, OSError) as exc:
+            raise LLMError("Ollama did not return a usable response.") from exc
+        except Exception as exc:
+            # The client exposes different transport exception classes across
+            # versions; preserve the root cause in logs without leaking it to
+            # API consumers.
+            raise LLMError("The Ollama service could not complete the request.") from exc

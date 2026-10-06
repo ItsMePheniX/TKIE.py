@@ -41,6 +41,7 @@ class TKIEExtractor:
         self,
         ollama_model: str | None = None,
         ollama_base_url: str | None = None,
+        ollama_timeout: float | None = None,
         json_template: dict[str, Any] | None = None,
         few_shot_path: Path | str | None = None,
         bad_sample_dir: Path | str | None = None,
@@ -54,6 +55,7 @@ class TKIEExtractor:
             **{k: v for k, v in {
                 "model": ollama_model,
                 "base_url": ollama_base_url,
+                "timeout": ollama_timeout,
             }.items() if v is not None}
         )
         self._validator = JSONValidator(self.template)
@@ -164,6 +166,10 @@ class TKIEExtractor:
             "after Prompt 2 extraction and Prompt 3 refinement.\n"
             f"Last raw output:\n{refined_output}"
         )
+
+    def is_ready(self) -> bool:
+        """Return whether the configured local LLM is reachable and loaded."""
+        return self._llm.is_available()
 
     # ------------------------------------------------------------------
     # Private helpers
