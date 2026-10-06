@@ -100,7 +100,8 @@ uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ### 5. Open the frontend
 
-Open `frontend/index.html` directly in your browser, or serve it:
+Serve the frontend locally (the API only permits trusted web origins, not
+`file://` pages):
 
 ```bash
 cd frontend
@@ -116,7 +117,9 @@ python -m http.server 3000
 |--------|------|-------------|
 | `POST` | `/extract` | Upload image → extracted JSON |
 | `GET`  | `/health`  | API liveness + active model |
+| `GET`  | `/ready` | Readiness: verifies Ollama and the configured model |
 | `GET`  | `/bad-samples` | List quarantined documents |
+| `GET`  | `/extractions` | List MongoDB extraction audit records |
 
 **Example:**
 ```bash
@@ -124,11 +127,44 @@ curl -X POST http://localhost:8000/extract \
      -F "file=@invoice.jpg"
 ```
 
+### Run tests
+
+```bash
+cd backend
+uv run python -m unittest discover -s tests -v
+```
+
 ---
 
 ## Customising the JSON Schema
 
 Edit `JSON_TEMPLATE` in [`backend/tkie/config.py`](backend/tkie/config.py) and update the few-shot examples in [`backend/examples/few_shot_examples.json`](backend/examples/few_shot_examples.json) to match your document domain.
+
+Also update `JSON_SCHEMA` in the same config file. It is enforced strictly:
+the response must have exactly the declared keys and conforming scalar and
+line-item types.
+
+## Upload and browser configuration
+
+Uploads are verified as images after transfer and capped at 10 MB (adjust
+`MAX_UPLOAD_BYTES` in `config.py`). The API permits only the local frontend
+origins by default. Configure additional trusted frontend origins with:
+
+Start by copying `.env.example` to `.env`, then set your MongoDB URI:
+
+```env
+CORS_ORIGINS=https://your-app.example,http://localhost:3000
+OLLAMA_TIMEOUT_SECONDS=60
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/
+MONGODB_DATABASE=tkie
+MONGODB_TIMEOUT_MS=5000
+```
+
+When `MONGODB_URI` is configured, each extraction attempt is recorded in the
+`extractions` collection. Records include status, timestamp, source filename,
+model, and successful structured output; uploaded image bytes are never stored.
+If MongoDB is intentionally not configured, extraction continues without
+persistence and `/extractions` returns `503`.
 
 ---
 
