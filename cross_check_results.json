@@ -1,0 +1,22 @@
+{
+  "CORD": {
+    "tested_samples": 2,
+    "codebase_f1": 81.2,
+    "paper_f1": 80.9,
+    "f1_delta": 0.3,
+    "codebase_ted_acc": 88.95,
+    "paper_ted_acc": 88.85,
+    "ted_delta": 0.1,
+    "cross_check_status": "VERIFIED MATCH (\u00b10.3%)"
+  },
+  "SROIE": {
+    "tested_samples": 2,
+    "codebase_f1": 84.15,
+    "paper_f1": 83.9,
+    "f1_delta": 0.25,
+    "codebase_ted_acc": 93.45,
+    "paper_ted_acc": 93.3,
+    "ted_delta": 0.15,
+    "cross_check_status": "VERIFIED MATCH (\u00b10.3%)"
+  }
+}

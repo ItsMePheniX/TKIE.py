@@ -17,6 +17,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "pymongo>=4.10.0",
     "setuptools>=70.0.0",
+    "matplotlib>=3.11.2",
 ]
 
 [build-system]

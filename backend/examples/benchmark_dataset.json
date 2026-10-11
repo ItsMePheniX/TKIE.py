@@ -1,0 +1,83 @@
+[
+  {
+    "id": "sroie_sample_01",
+    "dataset": "SROIE",
+    "ocr_text": "BOOKXCESSS SDN BHD\nNO 10, JALAN MERU BESTARI A2\n30020 IPOH, PERAK\nRECEIPT NO: INV-98214\nDATE: 2024-03-12\nITEM                 QTY   PRICE   TOTAL\nPYTHON COOKBOOK        1   120.00  120.00\nNOTEBOOK A5            2    15.00   30.00\nSUBTOTAL: 150.00\nSST 6%: 9.00\nTOTAL: 159.00\nCURRENCY: MYR\nPAYMENT: CASH",
+    "ground_truth": {
+      "company_name": "BOOKXCESSS SDN BHD",
+      "document_date": "2024-03-12",
+      "document_number": "INV-98214",
+      "vendor_name": null,
+      "line_items": [
+        {"description": "PYTHON COOKBOOK", "quantity": 1, "unit_price": 120.00, "amount": 120.00},
+        {"description": "NOTEBOOK A5", "quantity": 2, "unit_price": 15.00, "amount": 30.00}
+      ],
+      "subtotal": 150.00,
+      "tax": 9.00,
+      "total": 159.00,
+      "currency": "MYR",
+      "payment_terms": "CASH"
+    }
+  },
+  {
+    "id": "cord_sample_01",
+    "dataset": "CORD",
+    "ocr_text": "KOPI KENANGAN\nOUTLET MALL KELAPA GADING\nTAX INVOICE: KK-2024-8831\nDATE: 2024-02-18\nBILL TO: ADITYA\nITEM                 QTY   UNIT    AMOUNT\nKOPI KENANGAN MANTAN   2   18000    36000\nROTI COKLAT KLASIK     1   12000    12000\nSUBTOTAL: 48000\nPB1 (10%): 4800\nTOTAL DUE: 52800\nCURRENCY: IDR\nPAYMENT METHOD: QRIS",
+    "ground_truth": {
+      "company_name": "KOPI KENANGAN",
+      "document_date": "2024-02-18",
+      "document_number": "KK-2024-8831",
+      "vendor_name": "ADITYA",
+      "line_items": [
+        {"description": "KOPI KENANGAN MANTAN", "quantity": 2, "unit_price": 18000.0, "amount": 36000.0},
+        {"description": "ROTI COKLAT KLASIK", "quantity": 1, "unit_price": 12000.0, "amount": 12000.0}
+      ],
+      "subtotal": 48000.0,
+      "tax": 4800.0,
+      "total": 52800.0,
+      "currency": "IDR",
+      "payment_terms": "QRIS"
+    }
+  },
+  {
+    "id": "sroie_sample_02",
+    "dataset": "SROIE",
+    "ocr_text": "AEON CO. (M) BHD\n1 UTAMA SHOPPING CENTRE\nTAX INVOICE: AEON-441029\nDATE: 2024-04-05\nDESC                 QTY   PRICE   TOTAL\nORGANIC MILK 1L        2    14.50   29.00\nWHEAT BREAD 400G       1     4.20    4.20\nSUBTOTAL: 33.20\nTAX (0%): 0.00\nTOTAL AMOUNT: 33.20\nCURRENCY: MYR\nTERMS: CREDIT CARD",
+    "ground_truth": {
+      "company_name": "AEON CO. (M) BHD",
+      "document_date": "2024-04-05",
+      "document_number": "AEON-441029",
+      "vendor_name": null,
+      "line_items": [
+        {"description": "ORGANIC MILK 1L", "quantity": 2, "unit_price": 14.50, "amount": 29.00},
+        {"description": "WHEAT BREAD 400G", "quantity": 1, "unit_price": 4.20, "amount": 4.20}
+      ],
+      "subtotal": 33.20,
+      "tax": 0.00,
+      "total": 33.20,
+      "currency": "MYR",
+      "payment_terms": "CREDIT CARD"
+    }
+  },
+  {
+    "id": "cord_sample_02",
+    "dataset": "CORD",
+    "ocr_text": "BAKMI GM\nPLAZA INDONESIA\nORDER NO: BGM-7721\nDATE: 2024-01-22\nCUSTOMER: TABLE 4\nMENU                 QTY   PRICE   SUBTOTAL\nBAKMI SPESIAL GM       2   35000    70000\nPANGSIT GORENG 5PCS    1   20000    20000\nES TEH MANIS           2    8000    16000\nSUBTOTAL: 106000\nTAX 10%: 10600\nTOTAL: 116600\nCURRENCY: IDR\nPAYMENT: DEBIT",
+    "ground_truth": {
+      "company_name": "BAKMI GM",
+      "document_date": "2024-01-22",
+      "document_number": "BGM-7721",
+      "vendor_name": "TABLE 4",
+      "line_items": [
+        {"description": "BAKMI SPESIAL GM", "quantity": 2, "unit_price": 35000.0, "amount": 70000.0},
+        {"description": "PANGSIT GORENG 5PCS", "quantity": 1, "unit_price": 20000.0, "amount": 20000.0},
+        {"description": "ES TEH MANIS", "quantity": 2, "unit_price": 8000.0, "amount": 16000.0}
+      ],
+      "subtotal": 106000.0,
+      "tax": 10600.0,
+      "total": 116600.0,
+      "currency": "IDR",
+      "payment_terms": "DEBIT"
+    }
+  }
+]
